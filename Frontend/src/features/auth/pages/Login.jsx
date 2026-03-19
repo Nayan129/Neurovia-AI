@@ -24,7 +24,7 @@ const Login = () => {
     };
 
     await handleLogin(payload);
-    navigate("/");
+    navigate("/dashboard");
   };
 
   if (!loading && user) {
