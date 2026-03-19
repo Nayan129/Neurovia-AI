@@ -6,7 +6,7 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: (
-      <h1 className="font-bold text-2xl text-center">
+      <h1 className="font-bold text-4xl text-center">
         Welcome to Perplexity AI 🤖
       </h1>
     ),
