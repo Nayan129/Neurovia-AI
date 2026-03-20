@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { useAuth } from "../hooks/useAuth";
+import { Link, Navigate, useNavigate } from "react-router";
+import { useAuth } from "../hooks/useAuth.js";
 import { useSelector } from "react-redux";
-import { Navigate } from "react-router";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -24,7 +23,7 @@ const Login = () => {
     };
 
     await handleLogin(payload);
-    navigate("/dashboard");
+    navigate("/");
   };
 
   if (!loading && user) {
