@@ -6,15 +6,14 @@ import messageModel from "../model/message.model.js";
 export async function sendMessage(req, res) {
   const { message, chat: chatId } = req.body;
 
-  let chat = null,
-    title = null;
+  let title = null,
+    chat = null;
 
   if (!chatId) {
     title = await generateChatTitle(message);
-
     chat = await chatModel.create({
       user: req.user.id,
-      result,
+      title,
     });
   }
 
@@ -35,10 +34,8 @@ export async function sendMessage(req, res) {
   });
 
   res.status(201).json({
-    aiMessage: result,
-    chat,
     title,
-    userMessage,
+    chat,
     aiMessage,
   });
 }
@@ -49,7 +46,7 @@ export async function getChats(req, res) {
   const chats = await chatModel.find({ user: user.id });
 
   res.status(200).json({
-    message: "chats retrived successfully",
+    message: "Chats retrieved successfully",
     chats,
   });
 }
