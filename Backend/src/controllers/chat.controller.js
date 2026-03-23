@@ -12,7 +12,7 @@ export async function sendMessage(req, res) {
     chat = null;
 
   if (!chatId) {
-    title = await generateChatTitle(message);
+    title = await generateChatTitle(text);
     chat = await chatModel.create({
       user: req.user.id,
       title,
