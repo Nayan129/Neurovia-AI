@@ -5,6 +5,7 @@ import {
   verifyEmail,
   login,
   getMe,
+  logout,
 } from "../controllers/auth.controller.js";
 
 import {
@@ -23,5 +24,7 @@ authRouter.post("/login", loginValidator, login);
 authRouter.get("/get-me", authUser, getMe);
 
 authRouter.get("/verify-email", verifyEmail);
+
+authRouter.post("/logout", logout);
 
 export default authRouter;

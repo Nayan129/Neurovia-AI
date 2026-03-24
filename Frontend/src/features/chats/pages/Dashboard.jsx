@@ -3,6 +3,7 @@ import { useChat } from "../hooks/useChat";
 import { useEffect, useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { logoutUser } from "../../auth/services/auth.api.js";
 
 const Dashboard = () => {
   const chat = useChat();
@@ -10,6 +11,7 @@ const Dashboard = () => {
   const [input, setInput] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNewMessage, setIsNewMessage] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // this is for delete sidebar history
   const [hoveredChatId, setHoveredChatId] = useState(null);
@@ -56,13 +58,6 @@ const Dashboard = () => {
     });
 
     setInput("");
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("currentChatId");
-
-    window.location.href = "/login";
   };
 
   const openChat = (chatId) => {
@@ -186,7 +181,7 @@ const Dashboard = () => {
 
           {/* Logout */}
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutConfirm(true)}
             className="w-full px-3 py-2 text-sm bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-left transition"
           >
             Logout
@@ -309,6 +304,48 @@ const Dashboard = () => {
       {/* Glow Effects */}
       <div className="fixed top-0 left-1/4 w-96 h-96 bg-cyan-500/5 blur-3xl pointer-events-none" />
       <div className="fixed bottom-0 right-1/4 w-96 h-96 bg-cyan-500/5 blur-3xl pointer-events-none" />
+
+      {/* logout functionality */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-10">
+          <div className="bg-neutral-900 border border-gray-700 rounded-xl p-6 w-[90%] max-w-sm">
+            <h2 className="text-white text-lg font-semibold mb-3">
+              Confirm Logout
+            </h2>
+
+            <p className="text-gray-400 text-sm mb-5">
+              Are you sure you want to logout?
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="px-4 py-2 text-sm text-gray-300 hover:text-white"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    await logoutUser();
+
+                    localStorage.removeItem("user");
+                    localStorage.removeItem("currentChatId");
+
+                    window.location.href = "/login";
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm rounded-lg"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
