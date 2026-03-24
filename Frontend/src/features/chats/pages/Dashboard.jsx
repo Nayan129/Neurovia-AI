@@ -8,11 +8,23 @@ const Dashboard = () => {
   const chat = useChat();
 
   const [input, setInput] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isNewMessage, setIsNewMessage] = useState(false);
+
   const messagesEndRef = useRef(null);
 
   const isLoading = useSelector((state) => state.chat.isLoading);
   const chats = useSelector((state) => state.chat.chats);
   const currentChatId = useSelector((state) => state.chat.currentChatId);
+
+  // on load of app open recent active chat
+  useEffect(() => {
+    const savedChatId = localStorage.getItem("currentChatId");
+
+    if (savedChatId && chats[savedChatId]) {
+      chat.handleOpenChat(savedChatId, chats);
+    }
+  }, [chats]);
 
   useEffect(() => {
     chat.initializeSocketConnection();
@@ -20,7 +32,11 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isNewMessage) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
   }, [chats, currentChatId]);
 
   const handleSendMessage = (e) => {
@@ -28,6 +44,8 @@ const Dashboard = () => {
 
     const trimmed = input.trim();
     if (!trimmed) return;
+
+    setIsNewMessage(true);
 
     chat.handleSendMessage({
       message: trimmed,
@@ -38,13 +56,27 @@ const Dashboard = () => {
   };
 
   const openChat = (chatId) => {
+    setIsNewMessage(false);
     chat.handleOpenChat(chatId, chats);
+    setIsSidebarOpen(false);
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#0a0a0a] text-white overflow-hidden flex-col md:flex-row">
+    <div className="flex h-screen w-full bg-[#0a0a0a] text-white flex-col md:flex-row relative">
       {/* Sidebar */}
-      <aside className="hidden md:flex w-64 min-w-55 flex-col border-r border-gray-800/50 bg-[#0d0d0d]">
+      <aside
+        className={`fixed md:static top-0 left-0 h-full z-50 w-64 bg-[#0d0d0d] border-r border-gray-800/50 transform transition-transform duration-300
+  ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+  md:translate-x-0`}
+      >
+        <div className="md:hidden p-3 flex justify-end absolute right-0 top-1.5">
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="text-white text-lg font-extrabold"
+          >
+            ✕
+          </button>
+        </div>
         <div className="p-4 border-b border-gray-800/50">
           <h1 className="text-lg font-semibold text-white/90">Perplexity</h1>
         </div>
@@ -78,8 +110,17 @@ ${
         </div>
       </aside>
 
+      {/* button menu */}
+      <div className="md:hidden p-3 flex items-center justify-between">
+        <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-2xl">
+          ☰
+        </button>
+
+        <span className="text-gray-200 text-md">Perplexity</span>
+      </div>
+
       {/* Main */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 overflow-auto">
         <div className="flex-1 flex flex-col p-3 md:p-4 overflow-hidden">
           {/* Messages */}
           <div className="no-scrollbar flex-1 overflow-y-auto space-y-4 pr-2">
@@ -92,7 +133,7 @@ ${
                   }`}
                 >
                   <div
-                    className={`w-fit sm:max-w-[90%] md:max-w-[80%] lg:max-w-[70%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                    className={`w-fit sm:max-w-[90%] md:max-w-[80%] lg:max-w-[70%] px-4 py-3 rounded-2xl text-sm leading-relaxed overflow-y-auto ${
                       msg.role === "user"
                         ? "bg-gray-800/70 border border-gray-700 text-gray-200 ml-auto"
                         : "bg-transparent text-gray-300"
@@ -142,7 +183,11 @@ ${
           </div>
 
           {isLoading && (
-            <div className="text-gray-400 text-sm px-2">AI is thinking...</div>
+            <div className="flex justify-start">
+              <div className="px-4 py-2 rounded-xl bg-neutral-900 text-gray-200 text-sm animate-pulse">
+                AI is typing...
+              </div>
+            </div>
           )}
           {/* Input */}
           <div className="mt-4">

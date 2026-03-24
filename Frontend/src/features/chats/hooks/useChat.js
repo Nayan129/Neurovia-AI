@@ -23,15 +23,20 @@ export const useChat = () => {
   async function handleSendMessage({ message, chatId }) {
     try {
       dispatch(setLoading(true));
+
       const data = await sendMessage({ message, chatId });
+
       const { chat, aiMessage } = data;
-      if (!chatId)
+
+      if (!chatId) {
         dispatch(
           createNewChat({
             chatId: chat._id,
             title: chat.title,
           }),
         );
+      }
+
       dispatch(
         addNewMessage({
           chatId: chatId || chat._id,
@@ -39,6 +44,7 @@ export const useChat = () => {
           role: "user",
         }),
       );
+
       dispatch(
         addNewMessage({
           chatId: chatId || chat._id,
@@ -46,9 +52,10 @@ export const useChat = () => {
           role: aiMessage.role,
         }),
       );
+
       dispatch(setCurrentChatId(chat._id));
-    } catch (error) {
-      dispatch(setError("message send failed"));
+    } catch (err) {
+      dispatch(setError("Something went wrong"));
     } finally {
       dispatch(setLoading(false));
     }
@@ -77,11 +84,11 @@ export const useChat = () => {
 
   // to open old chat
   async function handleOpenChat(chatId, chats) {
-    console.log(chats[chatId]?.messages.length);
-
     if (chats[chatId]?.messages.length === 0) {
       const data = await getMessages(chatId);
       const { messages } = data;
+
+      localStorage.setItem("currentChatId", chatId);
 
       const formattedMessages = messages.map((msg) => ({
         content: msg.content,
