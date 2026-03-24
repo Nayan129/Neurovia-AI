@@ -38,6 +38,10 @@ const chatSlice = createSlice({
     setError: (state, action) => {
       state.error = action.payload;
     },
+    removeChat: (state, action) => {
+      const chatId = action.payload;
+      delete state.chats[chatId];
+    },
   },
 });
 
@@ -49,5 +53,6 @@ export const {
   createNewChat,
   addNewMessage,
   addMessages,
+  removeChat,
 } = chatSlice.actions;
 export default chatSlice.reducer;

@@ -11,13 +11,21 @@ const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNewMessage, setIsNewMessage] = useState(false);
 
+  // this is for delete sidebar history
+  const [hoveredChatId, setHoveredChatId] = useState(null);
+  const [openMenuChatId, setOpenMenuChatId] = useState(null);
+
   const messagesEndRef = useRef(null);
 
   const isLoading = useSelector((state) => state.chat.isLoading);
   const chats = useSelector((state) => state.chat.chats);
   const currentChatId = useSelector((state) => state.chat.currentChatId);
 
-  // on load of app open recent active chat
+  useEffect(() => {
+    chat.initializeSocketConnection();
+    chat.handleGetChats();
+  }, []);
+
   useEffect(() => {
     const savedChatId = localStorage.getItem("currentChatId");
 
@@ -25,11 +33,6 @@ const Dashboard = () => {
       chat.handleOpenChat(savedChatId, chats);
     }
   }, [chats]);
-
-  useEffect(() => {
-    chat.initializeSocketConnection();
-    chat.handleGetChats();
-  }, []);
 
   useEffect(() => {
     if (isNewMessage) {
@@ -44,8 +47,6 @@ const Dashboard = () => {
 
     const trimmed = input.trim();
     if (!trimmed) return;
-
-    setIsNewMessage(true);
 
     chat.handleSendMessage({
       message: trimmed,
@@ -81,22 +82,64 @@ const Dashboard = () => {
           <h1 className="text-lg font-semibold text-white/90">Perplexity</h1>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+        <nav className="flex-1 overflow-y-auto py-6 space-y-1 relative">
           {Object.values(chats)
             .sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated))
             .map((chatItem) => (
-              <button
+              <div
                 key={chatItem.id}
-                onClick={() => openChat(chatItem.id)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer
-${
-  currentChatId === chatItem.id
-    ? "bg-neutral-800 border border-neutral-600 text-white"
-    : "text-gray-400 hover:text-white hover:bg-neutral-800/50"
-}`}
+                onMouseEnter={() => setHoveredChatId(chatItem.id)}
+                onMouseLeave={() => setHoveredChatId(null)}
+                className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer group
+  ${
+    currentChatId === chatItem.id
+      ? "bg-neutral-800 border border-neutral-600 text-white"
+      : "text-gray-400 hover:text-white hover:bg-neutral-800/50"
+  }`}
               >
-                <span className="block truncate">{chatItem.title}</span>
-              </button>
+                <div
+                  onClick={() => openChat(chatItem.id)}
+                  className="flex-1 truncate"
+                >
+                  {chatItem.title}
+                </div>
+
+                {/* Three Dots for delete chat history */}
+                <div className="relative">
+                  {hoveredChatId === chatItem.id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuChatId(
+                          openMenuChatId === chatItem.id ? null : chatItem.id,
+                        );
+                      }}
+                      className="px-2 text-gray-100 hover:text-white text-md font-extrabold cursor-pointer"
+                    >
+                      ⋮
+                    </button>
+                  )}
+
+                  {/* delete button display */}
+
+                  {openMenuChatId === chatItem.id && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-0 bottom-full mb-1 w-28 bg-neutral-900 border border-gray-700 rounded-lg shadow-lg z-999"
+                    >
+                      <button
+                        onClick={() => {
+                          setOpenMenuChatId(null);
+                          setDeleteTarget(chatItem.id);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-neutral-800"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             ))}
         </nav>
 
@@ -182,13 +225,20 @@ ${
             <div ref={messagesEndRef} />
           </div>
 
+          {/* AI answering... */}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="px-4 py-2 rounded-xl bg-neutral-900 text-gray-200 text-sm animate-pulse">
-                AI is typing...
+              <div className="px-4 py-3 rounded-2xl bg-neutral-800 text-gray-400 text-sm flex items-center gap-2">
+                {/* dots animation */}
+                <span className="flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-150"></span>
+                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-300"></span>
+                </span>
               </div>
             </div>
           )}
+
           {/* Input */}
           <div className="mt-4">
             <form onSubmit={handleSendMessage} className="relative">

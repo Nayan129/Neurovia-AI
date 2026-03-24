@@ -13,11 +13,15 @@ import {
   createNewChat,
   addNewMessage,
   addMessages,
+  removeChat,
 } from "../chat.slice";
 import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 
 export const useChat = () => {
   const dispatch = useDispatch();
+
+  const currentChatId = useSelector((state) => state.chat.currentChatId);
 
   // message sending handler
   async function handleSendMessage({ message, chatId }) {
@@ -108,6 +112,18 @@ export const useChat = () => {
   // create new chat
   function handleNewChat() {
     dispatch(setCurrentChatId(null));
+    localStorage.removeItem("currentChatId");
+  }
+
+  async function handleDeleteChat(chatId) {
+    await deleteChat(chatId);
+
+    dispatch(removeChat(chatId));
+
+    // agar current chat delete hua
+    if (currentChatId === chatId) {
+      dispatch(setCurrentChatId(null));
+    }
   }
 
   return {
@@ -116,5 +132,6 @@ export const useChat = () => {
     handleGetChats,
     handleOpenChat,
     handleNewChat,
+    handleDeleteChat,
   };
 };
