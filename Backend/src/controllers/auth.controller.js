@@ -29,12 +29,10 @@ export async function register(req, res) {
     process.env.JWT_SECRET,
   );
 
-  sendEmail({
+  await sendEmail({
     to: email,
-    subject: "Welcome to Perplexity!",
+    subject: "Verify your email",
     html: `
-    <p>Hi ${username},</p>
-    <p>Please verify your email:</p>
     <a href="${process.env.BASE_URL}/api/auth/verify-email?token=${emailVerificationToken}">
       Verify Email
     </a>
@@ -162,7 +160,7 @@ export async function verifyEmail(req, res) {
     const html = `
         <h1>Email Verified Successfully!</h1>
         <p>Your email has been verified. You can now log in to your account.</p>
-        <a href="http://localhost:3000/login">Go to Login</a>
+        <a href="${process.env.CLIENT_URL}/login">Go to Login</a>
     `;
 
     return res.send(html);
