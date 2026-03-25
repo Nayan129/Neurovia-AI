@@ -28,7 +28,7 @@ const Register = () => {
 
       navigate("/login", {
         state: {
-          message: "Registered successfully! Please verify your email.",
+          message: "Account created! Please check your email to verify.",
         },
       });
     } catch (err) {

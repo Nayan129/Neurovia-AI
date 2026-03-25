@@ -29,21 +29,59 @@ export async function register(req, res) {
     process.env.JWT_SECRET,
   );
 
-  await sendEmail({
-    to: email,
-    subject: "Verify your email",
-    html: `
-    <a href="${process.env.BASE_URL}/api/auth/verify-email?token=${emailVerificationToken}">
-      Verify Email
-    </a>
-  `,
-  })
-    .then(() => {
-      console.log("Email sent");
-    })
-    .catch((err) => {
-      console.log("Email error:", err);
+  try {
+    await sendEmail({
+      to: email,
+      subject: "Verify your email • Neurovia AI",
+      html: `
+      <div style="font-family: Arial, sans-serif; background-color: #0f172a; padding: 40px; color: #e2e8f0;">
+        
+        <div style="max-width: 600px; margin: auto; background: #020617; border-radius: 12px; padding: 30px; border: 1px solid #1e293b;">
+          
+          <h2 style="color: #38bdf8; margin-bottom: 10px;">Welcome to Neurovia AI 🤖</h2>
+          
+          <p style="font-size: 15px; color: #94a3b8;">
+            Hi <strong>${username}</strong>,
+          </p>
+
+          <p style="font-size: 15px; color: #94a3b8;">
+            Thanks for signing up! Please confirm your email address to activate your account and start using Neurovia AI.
+          </p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.BASE_URL}/api/auth/verify-email?token=${emailVerificationToken}" 
+              style="background: #38bdf8; color: #020617; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+              Verify Email
+            </a>
+          </div>
+
+          <p style="font-size: 13px; color: #64748b;">
+            If the button doesn't work, copy and paste this link into your browser:
+          </p>
+
+          <p style="font-size: 12px; word-break: break-all; color: #38bdf8;">
+            ${process.env.BASE_URL}/api/auth/verify-email?token=${emailVerificationToken}
+          </p>
+
+          <hr style="border: 0; border-top: 1px solid #1e293b; margin: 25px 0;" />
+
+          <p style="font-size: 12px; color: #64748b;">
+            If you didn’t create this account, you can safely ignore this email.
+          </p>
+
+          <p style="font-size: 13px; margin-top: 20px;">
+            — Team Neurovia AI 🚀
+          </p>
+
+        </div>
+      </div>
+    `,
     });
+
+    console.log("✅ Email sent successfully");
+  } catch (err) {
+    console.error("❌ Email error:", err.message);
+  }
 
   res.status(201).json({
     message: "User registered successfully",
