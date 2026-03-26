@@ -1,7 +1,8 @@
+import { lazy, Suspense } from "react";
 import { useSelector } from "react-redux";
 import { useChat } from "../hooks/useChat";
-import { useEffect, useState, useRef } from "react";
-import ReactMarkdown from "react-markdown";
+import { useEffect, useState, useRef, useMemo } from "react";
+const ReactMarkdown = lazy(() => import("react-markdown"));
 import remarkGfm from "remark-gfm";
 import { logoutUser } from "../../auth/services/auth.api.js";
 import { useAuth } from "../../auth/hooks/useAuth.js";
@@ -25,11 +26,24 @@ const Dashboard = () => {
   const chats = useSelector((state) => state.chat.chats);
   const currentChatId = useSelector((state) => state.chat.currentChatId);
 
+  // to reduce unnecesary re-renders
+  const chatList = useMemo(() => {
+    return Object.values(chats || {}).sort(
+      (a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated),
+    );
+  }, [chats]);
+
   const user = useSelector((state) => state.auth.user);
 
+  // loading optimization
   useEffect(() => {
-    chat.initializeSocketConnection();
-    chat.handleGetChats();
+    setTimeout(() => {
+      chat.initializeSocketConnection();
+    }, 1000);
+
+    setTimeout(() => {
+      chat.handleGetChats();
+    }, 200);
   }, []);
 
   useEffect(() => {
@@ -95,64 +109,62 @@ const Dashboard = () => {
 
         {/* Chat List History*/}
         <nav className="flex-1 overflow-y-auto py-6 space-y-1 relative">
-          {Object.values(chats)
-            .sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated))
-            .map((chatItem) => (
-              <div
-                key={chatItem.id}
-                onMouseEnter={() => setHoveredChatId(chatItem.id)}
-                onMouseLeave={() => setHoveredChatId(null)}
-                className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer group
+          {chatList.map((chatItem) => (
+            <div
+              key={chatItem.id}
+              onMouseEnter={() => setHoveredChatId(chatItem.id)}
+              onMouseLeave={() => setHoveredChatId(null)}
+              className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm cursor-pointer group
           ${
             currentChatId === chatItem.id
               ? "bg-neutral-800 border border-neutral-600 text-white"
               : "text-gray-400 hover:text-white hover:bg-neutral-800/50"
           }`}
+            >
+              {/* Recent Chat Title */}
+              <div
+                onClick={() => openChat(chatItem.id)}
+                className="flex-1 truncate"
               >
-                {/* Recent Chat Title */}
-                <div
-                  onClick={() => openChat(chatItem.id)}
-                  className="flex-1 truncate"
-                >
-                  {chatItem.title}
-                </div>
-
-                <div className="relative">
-                  {(hoveredChatId === chatItem.id ||
-                    openMenuChatId === chatItem.id) && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenMenuChatId(
-                          openMenuChatId === chatItem.id ? null : chatItem.id,
-                        );
-                      }}
-                      className="px-2 text-gray-100 hover:text-white text-md font-extrabold"
-                    >
-                      ⋮
-                    </button>
-                  )}
-
-                  {/* Delete Funtionality */}
-                  {openMenuChatId === chatItem.id && (
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute right-0 bottom-full mb-1 w-28 bg-neutral-900 border border-gray-700 rounded-lg shadow-lg z-50"
-                    >
-                      <button
-                        onClick={() => {
-                          setOpenMenuChatId(null);
-                          setDeleteTarget(chatItem.id);
-                        }}
-                        className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-neutral-800"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {chatItem.title}
               </div>
-            ))}
+
+              <div className="relative">
+                {(hoveredChatId === chatItem.id ||
+                  openMenuChatId === chatItem.id) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuChatId(
+                        openMenuChatId === chatItem.id ? null : chatItem.id,
+                      );
+                    }}
+                    className="px-2 text-gray-100 hover:text-white text-md font-extrabold"
+                  >
+                    ⋮
+                  </button>
+                )}
+
+                {/* Delete Funtionality */}
+                {openMenuChatId === chatItem.id && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 bottom-full mb-1 w-28 bg-neutral-900 border border-gray-700 rounded-lg shadow-lg z-50"
+                  >
+                    <button
+                      onClick={() => {
+                        setOpenMenuChatId(null);
+                        setDeleteTarget(chatItem.id);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-neutral-800"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Bottom Section */}
@@ -223,34 +235,40 @@ const Dashboard = () => {
                     {msg.role === "user" ? (
                       msg.content
                     ) : (
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          p: ({ children }) => (
-                            <p className="mb-2 last:mb-0">{children}</p>
-                          ),
-                          ul: ({ children }) => (
-                            <ul className="list-disc pl-5 mb-2">{children}</ul>
-                          ),
-                          ol: ({ children }) => (
-                            <ol className="list-decimal pl-5 mb-2">
-                              {children}
-                            </ol>
-                          ),
-                          code: ({ children }) => (
-                            <code className="bg-white/10 px-1 py-0.5 rounded">
-                              {children}
-                            </code>
-                          ),
-                          pre: ({ children }) => (
-                            <pre className="bg-black/40 p-3 rounded-xl overflow-x-auto">
-                              {children}
-                            </pre>
-                          ),
-                        }}
+                      <Suspense
+                        fallback={<span className="text-gray-500">...</span>}
                       >
-                        {msg.content}
-                      </ReactMarkdown>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => (
+                              <p className="mb-2 last:mb-0">{children}</p>
+                            ),
+                            ul: ({ children }) => (
+                              <ul className="list-disc pl-5 mb-2">
+                                {children}
+                              </ul>
+                            ),
+                            ol: ({ children }) => (
+                              <ol className="list-decimal pl-5 mb-2">
+                                {children}
+                              </ol>
+                            ),
+                            code: ({ children }) => (
+                              <code className="bg-white/10 px-1 py-0.5 rounded">
+                                {children}
+                              </code>
+                            ),
+                            pre: ({ children }) => (
+                              <pre className="bg-black/40 p-3 rounded-xl overflow-x-auto">
+                                {children}
+                              </pre>
+                            ),
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </Suspense>
                     )}
                   </div>
                 </div>

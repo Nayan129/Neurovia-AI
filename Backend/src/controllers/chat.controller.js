@@ -27,7 +27,13 @@ export async function sendMessage(req, res) {
 
   const messages = await messageModel.find({ chat: chatId || chat._id });
 
-  const result = await generateResponse(messages);
+  // add promice to get response faster
+  const result = await Promise.race([
+    generateResponse(messages),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout")), 8000),
+    ),
+  ]);
 
   const aiMessage = await messageModel.create({
     chat: chatId || chat._id,
@@ -67,9 +73,12 @@ export async function getMessages(req, res) {
     });
   }
 
-  const messages = await messageModel.find({
-    chat: chatId,
-  });
+  // load only 10 messages on first render
+  const messages = await messageModel
+    .find({ chat: chatId })
+    .sort({ createdAt: -1 })
+    .limit(10);
+
 
   res.status(200).json({
     message: "Messages retrieved successfully",
