@@ -3,55 +3,77 @@ import chatModel from "../model/chat.model.js";
 import messageModel from "../model/message.model.js";
 
 export async function sendMessage(req, res) {
-  const { message } = req.body;
+  try {
+    const { message } = req.body;
 
-  const text = message.message;
-  const chatId = message.chatId;
+    const text = message?.message;
+    let chatId = message?.chatId;
 
-  let title = null,
-    chat = null;
+    if (!text) {
+      return res.status(400).json({ message: "Message is required" });
+    }
 
-  if (!chatId) {
-    title = await generateChatTitle(text);
-    chat = await chatModel.create({
-      user: req.user.id,
+    let title = null;
+    let chat = null;
+
+    // create new chat if not exists
+    if (!chatId) {
+      title = await generateChatTitle(text);
+      chat = await chatModel.create({
+        user: req.user.id,
+        title,
+      });
+
+      chatId = chat._id;
+    }
+
+    // save user message
+    await messageModel.create({
+      chat: chatId,
+      content: text,
+      role: "user",
+    });
+
+    // get all messages in correct order
+    const messages = await messageModel
+      .find({ chat: chatId })
+      .sort({ createdAt: 1 })
+      .limit(20);
+
+    let result;
+
+    try {
+      result = await generateResponse(messages);
+    } catch (error) {
+      console.log("AI Error:", error.message);
+      result = "⚠️ AI failed, please try again.";
+    }
+
+    // save AI message
+    const aiMessage = await messageModel.create({
+      chat: chatId,
+      content: result,
+      role: "ai",
+    });
+
+    res.status(201).json({
       title,
+      chat,
+      aiMessage,
+    });
+  } catch (error) {
+    console.log("Server Error:", error);
+
+    res.status(500).json({
+      message: "Internal Server Error",
     });
   }
-
-  const userMessage = await messageModel.create({
-    chat: chatId || chat._id,
-    content: text,
-    role: "user",
-  });
-
-  const messages = await messageModel.find({ chat: chatId || chat._id });
-
-  // add promice to get response faster
-  const result = await Promise.race([
-    generateResponse(messages),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Timeout")), 8000),
-    ),
-  ]);
-
-  const aiMessage = await messageModel.create({
-    chat: chatId || chat._id,
-    content: result,
-    role: "ai",
-  });
-
-  res.status(201).json({
-    title,
-    chat,
-    aiMessage,
-  });
 }
 
 export async function getChats(req, res) {
   const user = req.user;
 
-  const chats = await chatModel.find({ user: user.id });
+  const chats = await chatModel.find({ user: user.id }).sort({ createdAt: -1 });
 
   res.status(200).json({
     message: "Chats retrieved successfully",
@@ -76,12 +98,12 @@ export async function getMessages(req, res) {
   // load only 10 messages on first render
   const messages = await messageModel
     .find({ chat: chatId })
-    .sort({ createdAt: 1 })
+    .sort({ createdAt: -1 })
     .limit(10);
 
   res.status(200).json({
     message: "Messages retrieved successfully",
-    messages,
+    messages: messages.reverse(),
   });
 }
 
