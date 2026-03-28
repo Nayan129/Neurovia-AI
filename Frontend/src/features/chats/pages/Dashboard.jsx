@@ -5,15 +5,12 @@ import { useEffect, useState, useRef, useMemo } from "react";
 const ReactMarkdown = lazy(() => import("react-markdown"));
 import remarkGfm from "remark-gfm";
 import { logoutUser } from "../../auth/services/auth.api.js";
-import { useAuth } from "../../auth/hooks/useAuth.js";
 
 const Dashboard = () => {
   const chat = useChat();
-  const auth = useAuth();
 
   const [input, setInput] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isNewMessage, setIsNewMessage] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // this is for delete sidebar history
@@ -37,13 +34,11 @@ const Dashboard = () => {
 
   // loading optimization
   useEffect(() => {
-    setTimeout(() => {
+    const init = async () => {
       chat.initializeSocketConnection();
-    }, 1000);
-
-    setTimeout(() => {
-      chat.handleGetChats();
-    }, 200);
+      await chat.handleGetChats();
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -55,16 +50,14 @@ const Dashboard = () => {
   }, [chats]);
 
   useEffect(() => {
-    if (isNewMessage) {
-      messagesEndRef.current?.scrollIntoView({
-        behavior: "smooth",
-      });
-    }
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
   }, [chats, currentChatId]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    
+
     if (isLoading) return;
 
     const trimmed = input.trim();
@@ -90,14 +83,12 @@ const Dashboard = () => {
 
   return (
     <div className="flex h-screen w-full bg-[#0a0a0a] text-white flex-col md:flex-row relative">
-      {/* Sidebar */}
-
       <aside
         className={`fixed md:static top-0 left-0 h-full z-50 w-64 bg-[#0d0d0d] border-r border-gray-800/50 transform transition-transform duration-300 flex flex-col
   ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
   md:translate-x-0`}
       >
-        {/* Close Button sidebar */}
+        {/*  Button sidebar Close*/}
         <div className="md:hidden p-3 flex justify-end absolute right-0 top-1.5 z-10">
           <button
             onClick={() => setIsSidebarOpen(false)}
@@ -151,7 +142,7 @@ const Dashboard = () => {
                   </button>
                 )}
 
-                {/* Delete Funtionality */}
+                {/* Delete */}
                 {openMenuChatId === chatItem.id && (
                   <div
                     onClick={(e) => e.stopPropagation()}
@@ -309,16 +300,17 @@ const Dashboard = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask anything..."
-                  className="w-full px-4 py-4 bg-transparent text-white text-sm focus:outline-none"
+                  disabled={isLoading}
+                  className="w-full px-4 py-4 bg-transparent text-white text-sm focus:outline-none disabled:opacity-50"
                 />
 
                 <div className="flex justify-end px-3 py-2 border-t border-gray-800">
                   <button
                     type="submit"
-                    disabled={!input.trim()}
+                    disabled={!input.trim() || isLoading}
                     className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-700 disabled:opacity-50"
                   >
-                    Send
+                    {isLoading ? "Thinking..." : "Send"}
                   </button>
                 </div>
               </div>
