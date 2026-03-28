@@ -38,7 +38,7 @@ export async function sendMessage(req, res) {
     const messages = await messageModel
       .find({ chat: chatId })
       .sort({ createdAt: 1 })
-      .limit(20);
+      .limit(10);
 
     let result;
 
