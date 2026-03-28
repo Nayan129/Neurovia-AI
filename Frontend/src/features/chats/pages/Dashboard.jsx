@@ -62,16 +62,22 @@ const Dashboard = () => {
     }
   }, [chats, currentChatId]);
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
+    
+    if (isLoading) return;
 
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    chat.handleSendMessage({
-      message: trimmed,
-      chatId: currentChatId,
-    });
+    try {
+      await chat.handleSendMessage({
+        message: trimmed,
+        chatId: currentChatId,
+      });
+    } catch (err) {
+      console.error(err);
+    }
 
     setInput("");
   };
@@ -154,7 +160,7 @@ const Dashboard = () => {
                     <button
                       onClick={() => {
                         setOpenMenuChatId(null);
-                        setDeleteTarget(chatItem.id);
+                        chat.handleDeleteChat(chatItem.id);
                       }}
                       className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-neutral-800"
                     >
@@ -218,9 +224,9 @@ const Dashboard = () => {
           {/* Messages */}
           <div className="no-scrollbar flex-1 overflow-y-auto space-y-4 pr-2">
             {chats[currentChatId]?.messages?.length > 0 ? (
-              chats[currentChatId].messages.map((msg) => (
+              chats[currentChatId].messages.map((msg, index) => (
                 <div
-                  key={msg.id}
+                  key={index}
                   className={`flex ${
                     msg.role === "user" ? "justify-end" : "justify-start"
                   }`}
