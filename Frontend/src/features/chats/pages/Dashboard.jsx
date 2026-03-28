@@ -76,7 +76,6 @@ const Dashboard = () => {
   };
 
   const openChat = (chatId) => {
-    setIsNewMessage(false);
     chat.handleOpenChat(chatId, chats);
     setIsSidebarOpen(false);
   };
