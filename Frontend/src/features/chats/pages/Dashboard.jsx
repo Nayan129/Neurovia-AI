@@ -4,8 +4,6 @@ import { useChat } from "../hooks/useChat";
 import { useEffect, useState, useRef, useMemo } from "react";
 const ReactMarkdown = lazy(() => import("react-markdown"));
 import remarkGfm from "remark-gfm";
-// this is library / package for skeleton loading
-import { Skeleton } from "boneyard-js/react";
 import { logoutUser } from "../../auth/services/auth.api.js";
 
 const Dashboard = () => {
@@ -233,56 +231,40 @@ const Dashboard = () => {
                     {msg.role === "user" ? (
                       msg.content
                     ) : (
-                      // this is where skeleton will display
-                      <Skeleton
-                        name="ai-message"
-                        loading={
-                          isLoading &&
-                          index === chats[currentChatId].messages.length - 1
-                        }
-                        fixture={
-                          <div className="space-y-2">
-                            <div className="h-4 w-52 rounded bg-neutral-700"></div>
-                            <div className="h-4 w-72 rounded bg-neutral-700"></div>
-                            <div className="h-4 w-44 rounded bg-neutral-700"></div>
-                          </div>
-                        }
+                      <Suspense
+                        fallback={<span className="text-gray-500">...</span>}
                       >
-                        <Suspense
-                          fallback={<span className="text-gray-500">...</span>}
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => (
+                              <p className="mb-2 last:mb-0">{children}</p>
+                            ),
+                            ul: ({ children }) => (
+                              <ul className="list-disc pl-5 mb-2">
+                                {children}
+                              </ul>
+                            ),
+                            ol: ({ children }) => (
+                              <ol className="list-decimal pl-5 mb-2">
+                                {children}
+                              </ol>
+                            ),
+                            code: ({ children }) => (
+                              <code className="bg-white/10 px-1 py-0.5 rounded">
+                                {children}
+                              </code>
+                            ),
+                            pre: ({ children }) => (
+                              <pre className="bg-black/40 p-3 rounded-xl overflow-x-auto">
+                                {children}
+                              </pre>
+                            ),
+                          }}
                         >
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                              p: ({ children }) => (
-                                <p className="mb-2 last:mb-0">{children}</p>
-                              ),
-                              ul: ({ children }) => (
-                                <ul className="list-disc pl-5 mb-2">
-                                  {children}
-                                </ul>
-                              ),
-                              ol: ({ children }) => (
-                                <ol className="list-decimal pl-5 mb-2">
-                                  {children}
-                                </ol>
-                              ),
-                              code: ({ children }) => (
-                                <code className="bg-white/10 px-1 py-0.5 rounded">
-                                  {children}
-                                </code>
-                              ),
-                              pre: ({ children }) => (
-                                <pre className="bg-black/40 p-3 rounded-xl overflow-x-auto">
-                                  {children}
-                                </pre>
-                              ),
-                            }}
-                          >
-                            {msg.content}
-                          </ReactMarkdown>
-                        </Suspense>
-                      </Skeleton>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </Suspense>
                     )}
                   </div>
                 </div>
