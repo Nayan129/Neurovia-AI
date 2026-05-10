@@ -14,12 +14,11 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://neurovia-ai.vercel.app"],
+    origin: ["http://localhost:5173", "https://neurovia-ai-ten.vercel.app"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   }),
 );
-
 
 // Health check
 app.get("/", (req, res) => {
