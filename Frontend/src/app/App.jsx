@@ -9,7 +9,15 @@ function App() {
 
   // to wakeup backup server for first render
   useEffect(() => {
-    fetch("https://neurovia-ai-evzk.onrender.com");
+    const wakeServer = async () => {
+      try {
+        await fetch("https://neurovia-ai-evzk.onrender.com");
+      } catch (err) {
+        console.log("Server wakeup failed:", err.message);
+      }
+    };
+
+    wakeServer();
   }, []);
 
   useEffect(() => {
